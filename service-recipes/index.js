@@ -70,6 +70,43 @@ app.post('/recipes', auth, async (req, res) => { // <-- 2. TAMBAHKAN 'auth'
   }
 });
 
+/**
+ * @route DELETE /recipes/:id
+ * @desc Menghapus resep (TERPROTEKSI, HANYA PEMILIK)
+ */
+app.delete('/recipes/:id', auth, async (req, res) => {
+  try {
+    const recipeId = req.params.id;
+    const userId = req.user.id; // ID dari user yang sedang login (dari token)
+
+    // 1. Cari resepnya
+    const recipe = await Recipe.findById(recipeId);
+
+    if (!recipe) {
+      return res.status(404).json({ message: 'Resep tidak ditemukan' });
+    }
+
+    // 2. Cek Kepemilikan (PENTING!)
+    // 'recipe.user' adalah ObjectId, 'userId' adalah string.
+    // Kita harus konversi salah satunya agar bisa dibandingkan.
+    if (recipe.user.toString() !== userId) {
+      return res.status(401).json({ message: 'Akses ditolak. Anda bukan pemilik resep ini.' });
+    }
+
+    // 3. Jika lolos, hapus resepnya
+    await Recipe.findByIdAndDelete(recipeId);
+
+    // (OPSIONAL: Hapus juga semua komentar terkait di service-interactions)
+    // (Ini bisa jadi fitur lanjutan untuk Anda)
+
+    res.status(200).json({ message: 'Resep berhasil dihapus' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 // --- Menjalankan Server ---
 app.listen(PORT, () => {
   console.log(`Recipe-Service (service-recipes) berjalan di port ${PORT}`);
