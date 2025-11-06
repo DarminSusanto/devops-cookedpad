@@ -107,6 +107,45 @@ app.delete('/recipes/:id', auth, async (req, res) => {
   }
 });
 
+/**
+ * @route PUT /recipes/:id
+ * @desc Mengedit/memperbarui resep (TERPROTEKSI, HANYA PEMILIK)
+ */
+app.put('/recipes/:id', auth, async (req, res) => {
+  try {
+    const recipeId = req.params.id;
+    const userId = req.user.id; // ID dari user yang sedang login
+
+    // 1. Ambil data baru dari body request
+    const { title, description, ingredients, instructions } = req.body;
+
+    // 2. Cari resepnya di database
+    let recipe = await Recipe.findById(recipeId);
+
+    if (!recipe) {
+      return res.status(404).json({ message: 'Resep tidak ditemukan' });
+    }
+
+    // 3. Cek Kepemilikan (Sama seperti DELETE)
+    if (recipe.user.toString() !== userId) {
+      return res.status(401).json({ message: 'Akses ditolak. Anda bukan pemilik resep ini.' });
+    }
+
+    // 4. Perbarui resep dengan data baru
+    recipe = await Recipe.findByIdAndUpdate(
+      recipeId,
+      { $set: { title, description, ingredients, instructions } }, // Data baru
+      { new: true } // Opsi ini agar Mongoose mengembalikan dokumen yang sudah diperbarui
+    );
+
+    res.status(200).json({ message: 'Resep berhasil diperbarui', recipe });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 // --- Menjalankan Server ---
 app.listen(PORT, () => {
   console.log(`Recipe-Service (service-recipes) berjalan di port ${PORT}`);
