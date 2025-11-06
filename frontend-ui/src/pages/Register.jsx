@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate
 // API URL dari service-users
 const API_URL = 'http://localhost:3001/register';
 
+
 function Register() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [message, setMessage] = useState('');
