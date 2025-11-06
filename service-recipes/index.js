@@ -2,36 +2,34 @@
 
 const express = require('express');
 const mongoose = require('mongoose');
-const Recipe = require('./models/Recipe'); // Import model Recipe
-const cors = require('cors')
+const cors = require('cors');
+const Recipe = require('./models/Recipe');
+const auth = require('./auth'); // <-- 1. IMPORT PENJAGA GERBANG
 
 const app = express();
 const PORT = 3000;
 app.use(express.json());
 app.use(cors());
 
-// --- Koneksi ke Database MongoDB ---
+// --- Koneksi Database ---
 const DB_URI = 'mongodb://mongo-db:27017/db_resep';
-
 mongoose.connect(DB_URI)
-  // (PESAN LOG YANG BENAR)
   .then(() => console.log('Recipe-Service terhubung ke MongoDB (di Docker)'))
   .catch(err => console.error('Gagal terhubung ke MongoDB:', err));
 
 // --- Endpoint / Rute API ---
 
-// (PESAN LOG YANG BENAR)
 app.get('/', (req, res) => {
   res.send('Selamat datang di Recipe Service (API)!');
 });
 
 /**
  * @route GET /recipes
- * @desc Mendapatkan semua resep
+ * @desc Mendapatkan semua resep (Publik)
  */
 app.get('/recipes', async (req, res) => {
   try {
-    const recipes = await Recipe.find(); // Cari semua resep
+    const recipes = await Recipe.find().populate('user', 'email'); // Ambil resep + email pembuatnya
     res.status(200).json(recipes);
   } catch (err) {
     console.error(err);
@@ -41,32 +39,29 @@ app.get('/recipes', async (req, res) => {
 
 /**
  * @route POST /recipes
- * @desc Membuat resep baru
+ * @desc Membuat resep baru (TERPROTEKSI)
  */
-app.post('/recipes', async (req, res) => {
+//              Perhatikan 'auth' di sini! vvvv
+app.post('/recipes', auth, async (req, res) => { // <-- 2. TAMBAHKAN 'auth'
   try {
-    const { title, description, ingredients, instructions, userId } = req.body;
+    const { title, description, ingredients, instructions } = req.body;
 
-    // 1. Cek input dasar
     if (!title || !ingredients || !instructions) {
       return res.status(400).json({ message: 'Judul, bahan, dan instruksi harus diisi' });
     }
 
-    // 2. Buat resep baru
-    // (CATATAN: Nanti kita akan dapat userId dari token, 
-    // untuk sekarang kita kirim manual saja)
+    // 3. Ambil ID user DARI TOKEN, bukan dari body
+    const userId = req.user.id; 
+
     const newRecipe = new Recipe({
       title,
       description,
       ingredients,
       instructions,
-      user: userId // Nanti ini akan kita perbaiki
+      user: userId // <-- Simpan ID user yang sudah terverifikasi
     });
 
-    // 3. Simpan ke database
     await newRecipe.save();
-
-    // Buka MongoDB Compass, Anda akan lihat collection 'recipes' baru!
     res.status(201).json({ message: 'Resep baru berhasil disimpan', recipe: newRecipe });
 
   } catch (err) {
@@ -75,9 +70,7 @@ app.post('/recipes', async (req, res) => {
   }
 });
 
-
 // --- Menjalankan Server ---
 app.listen(PORT, () => {
-  // (PESAN LOG YANG BENAR)
   console.log(`Recipe-Service (service-recipes) berjalan di port ${PORT}`);
 });
