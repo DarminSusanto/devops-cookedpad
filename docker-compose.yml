@@ -1,0 +1,76 @@
+# ----------------------------------------------------------------------
+# FILE DOCKER-COMPOSE.YML LENGKAP UNTUK APLIKASI RESEP
+# ----------------------------------------------------------------------
+
+services:
+  # --- 1. FRONTEND SERVICE (UI) ---
+  # Service ini akan menjalankan kode React + Tailwind Anda
+  # setelah di-build, dan disajikan oleh server Nginx.
+  frontend-ui:
+    build: ./frontend-ui
+    container_name: web_ui
+    ports:
+      - "80:80" # Akses di http://localhost
+    networks:
+      - resep-net
+    depends_on:
+      # Pastikan semua API nyala dulu baru frontend nyala
+      - service-users
+      - service-recipes
+      - service-interactions
+
+  # --- 2. USER SERVICE (BACKEND API) ---
+  # Service ini mengurus login dan register
+  service-users:
+    build: ./service-users
+    container_name: api_users
+    ports:
+      - "3001:3000" # Akses API di http://localhost:3001
+    networks:
+      - resep-net
+    depends_on:
+      - mongo-db
+
+  # --- 3. RECIPE SERVICE (BACKEND API) ---
+  # Service ini mengurus data resep (buat, baca, update, hapus)
+  service-recipes:
+    build: ./service-recipes
+    container_name: api_recipes
+    ports:
+      - "3002:3000" # Akses API di http://localhost:3002
+    networks:
+      - resep-net
+    depends_on:
+      - mongo-db
+
+  # --- 4. INTERACTION SERVICE (BACKEND API) ---
+  # Service ini mengurus komen dan like
+  service-interactions:
+    build: ./service-interactions
+    container_name: api_interactions
+    ports:
+      - "3003:3000" # Akses API di http://localhost:3003
+    networks:
+      - resep-net
+    depends_on:
+      - mongo-db
+
+  # --- 5. DATABASE SERVICE ---
+  # Service ini adalah database MongoDB Anda
+  mongo-db:
+    image: mongo:latest
+    container_name: database_resep
+    ports:
+      - "27017:27017" # Untuk diakses oleh MongoDB Compass
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - resep-net
+
+# --- Konfigurasi Volume & Jaringan ---
+volumes:
+  mongo-data: # Volume ini agar data DB tidak hilang
+
+networks:
+  resep-net: # Jaringan internal agar semua container bisa "ngobrol"
+    driver: bridge
