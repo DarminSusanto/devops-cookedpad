@@ -5,21 +5,27 @@ import ReactDOM from 'react-dom/client';
 import {
   createBrowserRouter,
   RouterProvider,
-  Outlet,
+  Outlet, // Diperlukan untuk layout
 } from "react-router-dom";
-import { AuthProvider } from './context/AuthContext';
-import Navbar from './components/Navbar';
-import ProtectedRoute from './components/ProtectedRoute'; // <-- 1. IMPORT PROTECTED ROUTE
+import { AuthProvider } from './context/AuthContext'; // Import "Penyimpanan" Auth
+import Navbar from './components/Navbar'; // Import Navbar
+import ProtectedRoute from './components/ProtectedRoute'; // Import "Penjaga" Rute
 
-// Import Halaman Anda
+// --- Import Semua Halaman Anda ---
 import App from './App.jsx';
 import Register from './pages/Register.jsx';
 import Login from './pages/Login.jsx';
 import CreateRecipe from './pages/CreateRecipe.jsx';
 import RecipeDetail from './pages/RecipeDetail.jsx';
+import EditRecipe from './pages/EditRecipe.jsx';
 import './index.css';
 
-// Komponen "Layout" (Navbar + Halaman)
+/**
+ * Komponen "Layout"
+ * Ini adalah pembungkus yang memastikan Navbar selalu tampil
+ * di atas semua halaman. <Outlet /> adalah tempat di mana
+ * komponen halaman (App, Login, dll.) akan dirender.
+ */
 const AppLayout = () => (
   <div className="min-h-screen bg-gray-900">
     <Navbar />
@@ -29,16 +35,16 @@ const AppLayout = () => (
   </div>
 );
 
-// Definisikan rute (URL) Anda
+// --- Definisikan Rute (URL) Aplikasi Anda ---
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <AppLayout />, // Gunakan AppLayout sebagai pembungkus
+    element: <AppLayout />, // Gunakan AppLayout sebagai elemen induk
     children: [
-      // --- Rute Publik (Semua orang bisa lihat) ---
+      // --- Rute Publik (Semua orang bisa akses) ---
       {
         path: "/",
-        element: <App />,
+        element: <App />, // Halaman Utama (Daftar Resep)
       },
       {
         path: "/register",
@@ -49,28 +55,37 @@ const router = createBrowserRouter([
         element: <Login />,
       },
       {
-        path: "/recipe/:id",
+        path: "/recipe/:id", // Halaman Detail Resep
         element: <RecipeDetail />,
       },
       
-      // --- Rute Terproteksi (Hanya user login) ---
+      // --- Rute Terproteksi (Hanya user yang sudah login) ---
       {
-        element: <ProtectedRoute />, // <-- 2. GUNAKAN 'PENJAGA'
+        element: <ProtectedRoute />, // "Penjaga" akan mengecek login
         children: [
-          // 3. Masukkan semua rute yang butuh login DI DALAM SINI
+          // Semua rute di dalam sini akan dilindungi
           {
             path: "/create-recipe",
             element: <CreateRecipe />,
           },
-          // Nanti kita bisa tambahkan rute lain di sini,
-          // seperti /my-recipes atau /edit-recipe/:id
+          {
+            path: "/edit-recipe/:id",
+            element: <EditRecipe />,
+          },
+          // Anda bisa tambahkan rute terproteksi lain di sini
+          // {
+          //   path: "/my-profile",
+          //   element: <MyProfile />,
+          // },
         ]
       }
     ]
   },
 ]);
 
-// Render aplikasi
+// --- Render Aplikasi ---
+// Perhatikan: <AuthProvider> membungkus <RouterProvider>
+// Ini agar status login tersedia untuk semua halaman.
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
