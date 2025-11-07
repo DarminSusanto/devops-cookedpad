@@ -181,6 +181,37 @@ app.put('/me', auth, async (req, res) => {
   }
 });
 
+/**
+ * @route PUT /me/password
+ * @desc Mengganti password user
+ * @access Private
+ */
+app.put('/me/password', auth, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    // 1. Dapatkan user
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
+
+    // 2. Cek password lama
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Password lama salah' });
+    }
+
+    // 3. Enkripsi dan simpan password baru
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({ message: 'Password berhasil diperbarui' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 // --- Menjalankan Server ---
 app.listen(PORT, () => {
   console.log(`User-Service (service-users) berjalan di port ${PORT}`);
