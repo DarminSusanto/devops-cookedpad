@@ -13,6 +13,18 @@ const UserSchema = new Schema({
   password: {
     type: String,
     required: true
+  },
+  displayName: {
+    type: String,
+    default: ''
+  },
+  bio: {
+    type: String,
+    default: ''
+  },
+  profilePictureUrl: {
+    type: String,
+    default: '' // Kita hanya akan menyimpan URL gambarnya
   }
 }, { timestamps: true }); // Menambahkan createdAt dan updatedAt otomatis
 
