@@ -116,6 +116,7 @@ app.delete('/comments/:id', auth, async (req, res) => {
 });
 
 
+
 // --- Menjalankan Server ---
 app.listen(PORT, () => {
   console.log(`Interaction-Service (service-interactions) berjalan di port ${PORT}`);
