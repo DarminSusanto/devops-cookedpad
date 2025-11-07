@@ -2,18 +2,19 @@
 
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const cors = require('cors'); // <-- Pastikan cors di-import
-const User = require('./models/User');
-const auth = require('./auth'); // <-- 1. IMPORT PENJAGA GERBANG
+const bcrypt = require('bcryptjs'); // Untuk enkripsi password
+const jwt = require('jsonwebtoken'); // Untuk membuat/membaca token
+const cors = require('cors'); // Untuk mengizinkan koneksi dari frontend
+const User = require('./models/User'); // Import model User
+const auth = require('./auth'); // Import "Penjaga Gerbang" (Middleware)
 
 const app = express();
 const PORT = 3000;
 app.use(express.json()); // Middleware untuk membaca body JSON
-app.use(cors());
+app.use(cors()); // Terapkan CORS untuk semua rute
 
 // --- Koneksi ke Database MongoDB ---
+// Nama host 'mongo-db' adalah nama service di docker-compose.yml
 const DB_URI = 'mongodb://mongo-db:27017/db_resep';
 // Rahasia untuk token Anda, buatlah yang unik
 const JWT_SECRET = 'rahasia-uts-devops-kelompok-anda';
@@ -30,31 +31,8 @@ app.get('/', (req, res) => {
 
 /**
  * @route POST /register
- * @desc Mendaftarkan user baru
+ * @desc Mendaftarkan user baru (Publik)
  */
-
-/**
- * @route GET /me
- * @desc Mendapatkan data user yang sedang login (via token)
- * @access Private
- */
-app.get('/me', auth, async (req, res) => {
-  // 'auth' adalah penjaga gerbang. Jika kode sampai di sini,
-  // berarti token-nya valid dan kita punya 'req.user'.
-  
-  try {
-    // Kita tidak mau kirim password, jadi kita select '-password'
-    const user = await User.findById(req.user.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User tidak ditemukan' });
-    }
-    res.json(user); // Kirim data user (id, email, createdAt)
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server Error' });
-  }
-});
-
 app.post('/register', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -83,7 +61,6 @@ app.post('/register', async (req, res) => {
     // 5. Simpan ke database
     await user.save();
     
-    // Tes di MongoDB Compass, user baru akan muncul!
     res.status(201).json({ message: 'User berhasil didaftarkan' });
 
   } catch (err) {
@@ -94,7 +71,7 @@ app.post('/register', async (req, res) => {
 
 /**
  * @route POST /login
- * @desc Login user dan mengembalikan token JWT
+ * @desc Login user dan mengembalikan token JWT (Publik)
  */
 app.post('/login', async (req, res) => {
   try {
@@ -136,6 +113,52 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
+
+/**
+ * @route GET /me
+ * @desc Mendapatkan data user yang sedang login (via token)
+ * @access Private (Butuh token)
+ */
+app.get('/me', auth, async (req, res) => {
+  // 'auth' adalah penjaga gerbang. Jika lolos, kita punya 'req.user'.
+  try {
+    // Kita tidak mau kirim password, jadi kita select '-password'
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+    res.json(user); // Kirim data user (id, email, createdAt)
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+/**
+ * @route GET /user/:id
+ * @desc Mendapatkan data profil user secara publik (tanpa password)
+ * @access Public
+ */
+app.get('/user/:id', async (req, res) => {
+  try {
+    // Cari user berdasarkan ID dari URL
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+    // Kirim data user (id, email, createdAt)
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    // Jika ID tidak valid
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 
 // --- Menjalankan Server ---
 app.listen(PORT, () => {
