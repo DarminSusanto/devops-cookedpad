@@ -2,10 +2,11 @@
 
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs'); // Untuk enkripsi password
-const jwt = require('jsonwebtoken'); // Untuk membuat token login
-const User = require('./models/User'); // Import model User
-const cors = require('cors')
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cors = require('cors'); // <-- Pastikan cors di-import
+const User = require('./models/User');
+const auth = require('./auth'); // <-- 1. IMPORT PENJAGA GERBANG
 
 const app = express();
 const PORT = 3000;
@@ -31,6 +32,29 @@ app.get('/', (req, res) => {
  * @route POST /register
  * @desc Mendaftarkan user baru
  */
+
+/**
+ * @route GET /me
+ * @desc Mendapatkan data user yang sedang login (via token)
+ * @access Private
+ */
+app.get('/me', auth, async (req, res) => {
+  // 'auth' adalah penjaga gerbang. Jika kode sampai di sini,
+  // berarti token-nya valid dan kita punya 'req.user'.
+  
+  try {
+    // Kita tidak mau kirim password, jadi kita select '-password'
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+    res.json(user); // Kirim data user (id, email, createdAt)
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 app.post('/register', async (req, res) => {
   try {
     const { email, password } = req.body;
