@@ -2,61 +2,99 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom'; // Import 'Link' untuk membuat resep bisa di-klik
+import { Link } from 'react-router-dom';
 
-// Ini adalah URL API resep Anda (dari docker-compose.yml)
+// URL API dari service-recipes
 const API_URL = 'http://localhost:3002/recipes';
 
 function App() {
-  // Siapkan 'state' untuk menyimpan data resep
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // State untuk Search
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Gunakan 'useEffect' untuk mengambil data saat komponen dimuat
-  useEffect(() => {
-    async function fetchRecipes() {
-      try {
-        setLoading(true);
-        // Panggil API menggunakan axios!
-        const response = await axios.get(API_URL);
-        
-        // Simpan data resep ke 'state'
-        setRecipes(response.data); 
-      } catch (error) {
-        console.error("Gagal mengambil resep:", error);
-      } finally {
-        setLoading(false);
-      }
+  // Fungsi untuk mengambil SEMUA resep (saat halaman dimuat)
+  const fetchAllRecipes = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(API_URL);
+      setRecipes(response.data);
+    } catch (error) {
+      console.error("Gagal mengambil semua resep:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    fetchRecipes();
-  }, []); // [] berarti "jalankan satu kali saat memuat"
+  // Jalankan fetchAllRecipes() satu kali saat halaman dimuat
+  useEffect(() => {
+    fetchAllRecipes();
+  }, []);
 
-  // Tampilkan data resep ke layar
+  // Fungsi untuk menangani PENCARIAN
+  const handleSearch = async (e) => {
+    e.preventDefault(); // Mencegah form me-refresh halaman
+    if (!searchTerm) {
+      // Jika search bar kosong, ambil semua resep
+      fetchAllRecipes();
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      // Panggil API pencarian di backend
+      const response = await axios.get(`${API_URL}/search?q=${searchTerm}`);
+      setRecipes(response.data); // Update daftar resep dengan hasil pencarian
+    } catch (error) {
+      console.error("Gagal mencari resep:", error);
+      setRecipes([]); // Kosongkan resep jika pencarian error
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="text-white p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Judul Halaman (Navbar sudah ada di AppLayout) */}
         <h1 className="text-3xl font-bold text-center mb-8">
           Temukan Resep Terbaru
         </h1>
 
-        {/* Tampilkan pesan loading */}
+        {/* Form Search Bar */}
+        <form onSubmit={handleSearch} className="max-w-xl mx-auto mb-8 flex">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Cari resep berdasarkan judul (cth: Nasi Goreng)"
+            className="w-full p-3 rounded-l-lg bg-gray-700 text-white border-2 border-gray-700 focus:outline-none focus:border-green-500"
+          />
+          <button
+            type="submit"
+            className="bg-green-600 px-6 py-3 rounded-r-lg font-bold hover:bg-green-500"
+          >
+            Cari
+          </button>
+        </form>
+
+        {/* Tampilkan Hasil */}
         {loading && <p className="text-center text-gray-400">Loading resep...</p>}
 
-        {/* Tampilkan jika tidak ada resep */}
         {!loading && recipes.length === 0 && (
           <p className="text-center text-gray-400">
-            Belum ada resep. Jadilah yang pertama <Link to="/create-recipe" className="text-green-400 underline">membuat resep</Link>!
+            {searchTerm 
+              ? `Resep untuk "${searchTerm}" tidak ditemukan.` 
+              : `Belum ada resep. Jadilah yang pertama membuat resep!`
+            }
           </p>
         )}
 
-        {/* Tampilkan daftar resep dalam bentuk grid */}
+        {/* Daftar Resep (Grid) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {recipes.map((recipe) => (
-            // Setiap resep adalah 'Link' ke halaman detailnya
             <Link 
-              to={`/recipe/${recipe._id}`} // Cth: /recipe/12345abc
+              to={`/recipe/${recipe._id}`} 
               key={recipe._id} 
               className="block bg-gray-800 p-6 rounded-lg shadow-lg hover:bg-gray-700 transition-colors"
             >
@@ -68,7 +106,6 @@ function App() {
               
               <h3 className="text-lg font-semibold mb-2">Bahan-bahan:</h3>
               <ul className="list-disc list-inside text-gray-400 text-sm">
-                {/* Hanya tampilkan 3 bahan pertama */}
                 {recipe.ingredients.slice(0, 3).map((item, index) => (
                   <li key={index} className="truncate">{item}</li>
                 ))}
