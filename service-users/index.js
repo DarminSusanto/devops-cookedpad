@@ -159,6 +159,27 @@ app.get('/user/:id', async (req, res) => {
   }
 });
 
+/**
+ * @route PUT /me
+ * @desc Update info profil user (displayName, bio)
+ * @access Private
+ */
+app.put('/me', auth, async (req, res) => {
+  try {
+    const { displayName, bio } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id, // Ambil ID dari token
+      { $set: { displayName, bio } }, // Data baru
+      { new: true } // Kembalikan dokumen yang sudah baru
+    ).select('-password');
+
+    res.json(updatedUser);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
 
 // --- Menjalankan Server ---
 app.listen(PORT, () => {
