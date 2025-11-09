@@ -1,0 +1,46 @@
+# /.github/workflows/ci.yml
+
+# 1. Nama Workflow Anda (Akan muncul di tab Actions)
+name: CI - Build & Test Docker Services
+
+# 2. Trigger (Kapan pipeline ini berjalan)
+on:
+  # Berjalan saat ada 'push' ke branch 'main' (Ini adalah CD)
+  push:
+    branches: [ main ]
+    
+  # Berjalan saat ada 'pull request' yang dibuat untuk 'main' (Ini adalah CI)
+  pull_request:
+    branches: [ main ]
+
+# 3. Pekerjaan (Apa yang harus dilakukan)
+jobs:
+  # Kita definisikan satu pekerjaan bernama "build-test"
+  build-test:
+    # Menggunakan server Linux (Ubuntu) terbaru dari GitHub
+    runs-on: ubuntu-latest
+
+    # Langkah-langkah yang harus dijalankan
+    steps:
+      # Langkah 1: Download kode dari repositori Anda
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Langkah 2: Siapkan Docker (ini penting untuk docker compose)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Langkah 3: Tes Build (Momen Kebenaran)
+      # Ini adalah tes CI Anda. 
+      # Perintah ini akan mencoba membangun SEMUA 6 service Anda.
+      # Jika salah satu build gagal (lupa 'npm install', typo, dll),
+      # seluruh pipeline akan GAGAL.
+      - name: Build all Docker services
+        run: docker compose build
+
+      # (Opsional) Langkah 4: Tes Sederhana
+      # Kita bisa tambahkan tes sederhana lain di sini nanti
+      - name: Run simple container check
+        run: |
+          echo "Builds completed successfully!"
+          docker images
