@@ -7,7 +7,7 @@ const Recipe = require('./models/Recipe'); // Import model Recipe
 const auth = require('./auth'); // Import "Penjaga Gerbang" (Middleware)
 
 const app = express();
-const PORT = 3000;
+const PORT = 3002;
 app.use(express.json());
 app.use(cors()); // Terapkan CORS untuk semua rute
 
@@ -182,4 +182,20 @@ app.delete('/recipes/:id', auth, async (req, res) => {
 // --- Menjalankan Server ---
 app.listen(PORT, () => {
   console.log(`Recipe-Service (service-recipes) berjalan di port ${PORT}`);
+});
+
+/**
+ * Tambahan: route untuk mendapatkan resep milik user tertentu
+ * @route GET /recipes/user/:userId
+ * @desc Mendapatkan semua resep yang dibuat oleh satu user
+ */
+app.get('/recipes/user/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const recipes = await Recipe.find({ user: userId }).populate('user', 'email').sort({ createdAt: -1 });
+    res.status(200).json(recipes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
 });

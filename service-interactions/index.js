@@ -7,7 +7,7 @@ const Comment = require('./models/Comment'); // Import model Comment
 const auth = require('./auth'); // Import "Penjaga Gerbang" (Middleware)
 
 const app = express();
-const PORT = 3000;
+const PORT = 3003;
 app.use(express.json());
 app.use(cors()); // Terapkan CORS untuk semua rute
 

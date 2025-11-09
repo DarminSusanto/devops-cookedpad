@@ -2,7 +2,7 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}", // Ini memberi tahu Tailwind untuk memindai file React
+    "./src/**/*.{js,ts,jsx,tsx}", // <-- BARIS INI PALING PENTING
   ],
   theme: {
     extend: {},

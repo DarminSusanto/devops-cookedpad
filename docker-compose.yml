@@ -1,4 +1,4 @@
-# /docker-compose.yml (LENGKAP DAN SUDAH DIPERBARUI)
+# /docker-compose.yml (Ganti seluruh file Anda dengan ini)
 
 services:
   # --- 1. FRONTEND SERVICE (UI) ---
@@ -6,59 +6,64 @@ services:
     build: ./frontend-ui
     container_name: web_ui
     ports:
-      - "80:80"
+      - "8080:80" # Port eksternal 8080 -> internal 80 (Nginx)
     networks:
       - resep-net
     depends_on:
+      # Frontend 'tergantung pada' semua API backend
       - service-users
       - service-recipes
       - service-interactions
+      - service-upload
 
   # --- 2. USER SERVICE (BACKEND API) ---
   service-users:
     build: ./service-users
     container_name: api_users
     ports:
-      - "3001:3000"
+      - "3001:3000" # Port eksternal 3001 -> internal 3000 (Node.js)
     networks:
       - resep-net
     depends_on:
-      - mongo-db
+      - mongo-db # 'Tergantung pada' database
+    restart: unless-stopped # (Sangat penting jika DB lambat start)
 
   # --- 3. RECIPE SERVICE (BACKEND API) ---
   service-recipes:
     build: ./service-recipes
     container_name: api_recipes
     ports:
-      - "3002:3000"
+      - "3002:3000" # Port eksternal 3002 -> internal 3000 (Node.js)
     networks:
       - resep-net
     depends_on:
-      - mongo-db
+      - mongo-db # 'Tergantung pada' database
+    restart: unless-stopped
 
   # --- 4. INTERACTION SERVICE (BACKEND API) ---
   service-interactions:
     build: ./service-interactions
     container_name: api_interactions
     ports:
-      - "3003:3000"
+      - "3003:3000" # Port eksternal 3003 -> internal 3000 (Node.js)
     networks:
       - resep-net
     depends_on:
-      - mongo-db
+      - mongo-db # 'Tergantung pada' database
+    restart: unless-stopped
 
-  # --- 5. UPLOAD SERVICE (BACKEND API) - BARU! ---
+  # --- 5. UPLOAD SERVICE (BACKEND API) ---
   service-upload:
     build: ./service-upload
     container_name: api_upload
     ports:
-      - "3004:3000" # Kita gunakan port 3004
+      - "3004:3000" # Port eksternal 3004 -> internal 3000 (Node.js)
     volumes:
-      # Map folder /app/uploads di DALAM container
-      # ke 'uploads-data' di LUAR container
       - uploads-data:/app/uploads
     networks:
       - resep-net
+    restart: unless-stopped
+    # (Service ini tidak tergantung pada DB, jadi tidak perlu depends_on)
 
   # --- 6. DATABASE SERVICE ---
   mongo-db:
@@ -70,11 +75,12 @@ services:
       - mongo-data:/data/db
     networks:
       - resep-net
+    restart: unless-stopped
 
 # --- Konfigurasi Volume & Jaringan ---
 volumes:
   mongo-data: # Volume untuk data DB
-  uploads-data: # Volume BARU untuk file gambar
+  uploads-data: # Volume untuk file gambar
 
 networks:
   resep-net:

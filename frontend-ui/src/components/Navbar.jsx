@@ -1,125 +1,49 @@
-// /frontend-ui/src/App.jsx
+// /frontend-ui/src/components/Navbar.jsx
 
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-// URL API dari service-recipes
-const API_URL = 'http://localhost:3002/recipes';
+function Navbar() {
+  const { isAuthenticated, logout, user } = useAuth();
+  const navigate = useNavigate();
 
-function App() {
-  const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // State untuk Search
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Fungsi untuk mengambil SEMUA resep (saat halaman dimuat)
-  const fetchAllRecipes = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(API_URL);
-      setRecipes(response.data);
-    } catch (error) {
-      console.error("Gagal mengambil semua resep:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Jalankan fetchAllRecipes() satu kali saat halaman dimuat
-  useEffect(() => {
-    fetchAllRecipes();
-  }, []);
-
-  // Fungsi untuk menangani PENCARIAN
-  const handleSearch = async (e) => {
-    e.preventDefault(); // Mencegah form me-refresh halaman
-    if (!searchTerm) {
-      // Jika search bar kosong, ambil semua resep
-      fetchAllRecipes();
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      // Panggil API pencarian di backend
-      const response = await axios.get(`${API_URL}/search?q=${searchTerm}`);
-      setRecipes(response.data); // Update daftar resep dengan hasil pencarian
-    } catch (error) {
-      console.error("Gagal mencari resep:", error);
-      setRecipes([]); // Kosongkan resep jika pencarian error
-    } finally {
-      setLoading(false);
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   return (
-    <div className="text-white p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8">
-          Temukan Resep Terbaru
-        </h1>
-
-        {/* Form Search Bar */}
-        <form onSubmit={handleSearch} className="max-w-xl mx-auto mb-8 flex">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Cari resep berdasarkan judul (cth: Nasi Goreng)"
-            className="w-full p-3 rounded-l-lg bg-gray-700 text-white border-2 border-gray-700 focus:outline-none focus:border-green-500"
-          />
-          <button
-            type="submit"
-            className="bg-green-600 px-6 py-3 rounded-r-lg font-bold hover:bg-green-500"
-          >
-            Cari
-          </button>
-        </form>
-
-        {/* Tampilkan Hasil */}
-        {loading && <p className="text-center text-gray-400">Loading resep...</p>}
-
-        {!loading && recipes.length === 0 && (
-          <p className="text-center text-gray-400">
-            {searchTerm 
-              ? `Resep untuk "${searchTerm}" tidak ditemukan.` 
-              : `Belum ada resep. Jadilah yang pertama membuat resep!`
-            }
-          </p>
-        )}
-
-        {/* Daftar Resep (Grid) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recipes.map((recipe) => (
-            <Link 
-              to={`/recipe/${recipe._id}`} 
-              key={recipe._id} 
-              className="block bg-gray-800 p-6 rounded-lg shadow-lg hover:bg-gray-700 transition-colors"
-            >
-              <h2 className="text-2xl font-bold mb-2 truncate">{recipe.title}</h2>
-              <p className="text-gray-400 mb-2 text-sm">
-                Oleh: {recipe.user?.email || 'User Telah Dihapus'}
-              </p>
-              <p className="text-gray-300 mb-4 truncate">{recipe.description}</p>
-              
-              <h3 className="text-lg font-semibold mb-2">Bahan-bahan:</h3>
-              <ul className="list-disc list-inside text-gray-400 text-sm">
-                {recipe.ingredients.slice(0, 3).map((item, index) => (
-                  <li key={index} className="truncate">{item}</li>
-                ))}
-                {recipe.ingredients.length > 3 && (
-                  <li className="text-gray-500 italic">...dan lainnya</li>
-                )}
-              </ul>
-            </Link>
-          ))}
+    <nav className="navbar">
+      <div className="nav-inner">
+        <div style={{display: 'flex', alignItems: 'center'}}>
+          {/* left spacer for future items */}
         </div>
 
+        <div style={{display:'flex', justifyContent:'center', width:'100%'}}>
+          <Link to="/" className="logo">
+            <span className="emoji">🍳</span>
+            <span className="brand">CookedPad</span>
+          </Link>
+        </div>
+
+        <div className="navbar-right">
+          {isAuthenticated ? (
+            <>
+              <Link to="/create-recipe" className="btn btn-primary" style={{display:'inline-block'}}>+ Tulis Resep</Link>
+              <Link to="/profile"><img src={user?.profilePictureUrl || 'https://via.placeholder.com/40'} alt="Profil" className="profile-img"/></Link>
+              <button onClick={handleLogout} className="btn btn-ghost">Logout</button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="btn btn-ghost">Masuk</Link>
+              <Link to="/register" className="btn btn-primary">Daftar</Link>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </nav>
   );
 }
 
-export default App;
+export default Navbar;

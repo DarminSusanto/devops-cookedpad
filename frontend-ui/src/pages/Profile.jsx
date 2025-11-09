@@ -1,11 +1,12 @@
 // /frontend-ui/src/pages/Profile.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext'; // Import hook Auth
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 // URL API DARI DUA SERVICE
+// service-users is exposed on host port 3001 in this environment
 const USER_API_URL = 'http://localhost:3001'; // service-users
 const UPLOAD_API_URL = 'http://localhost:3004'; // service-upload
 
@@ -23,6 +24,28 @@ function Profile() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [message, setMessage] = useState('');
   const [uploadMessage, setUploadMessage] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [recipes, setRecipes] = useState([]);
+
+  // Ambil list resep user (sederhana: ambil semua dan filter client-side)
+  useEffect(() => {
+    const fetchUserRecipes = async () => {
+      try {
+        const res = await axios.get('http://localhost:3002/recipes');
+        const all = res.data || [];
+        const my = all.filter(r => {
+          // beberapa service mengisi user sebagai object dengan _id atau id
+          const uid = user?.id || user?._id || (user && user.id);
+          const authorId = r.user?._id || r.user?.id || r.user;
+          return uid && authorId && String(authorId) === String(uid);
+        });
+        setRecipes(my);
+      } catch (err) {
+        // ignore
+      }
+    };
+    fetchUserRecipes();
+  }, [user]);
 
   // --- Handler untuk Form Info Profil ---
   const handleInfoChange = (e) => {
@@ -89,60 +112,97 @@ function Profile() {
     }
   };
 
+  // --- Change password ---
+  const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '' });
+  const handlePasswordChange = (e) => setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const config = { headers: { 'x-auth-token': token } };
+      const res = await axios.put(`${USER_API_URL}/me/password`, passwordForm, config);
+      setPasswordMessage(res.data.message || 'Password diperbarui');
+      setPasswordForm({ oldPassword: '', newPassword: '' });
+    } catch (err) {
+      setPasswordMessage(err?.response?.data?.message || 'Gagal mengganti password');
+    }
+  };
+
 
   if (!user) return <p>Loading...</p>;
 
   return (
-    <div className="max-w-4xl mx-auto p-8 text-white">
-      <h1 className="text-3xl font-bold mb-6">Profil Saya</h1>
+    <div className="main-content">
+      <div className="container">
+        <h1 className="page-title">Profil Saya</h1>
 
-      {/* --- Form 1: Edit Info Profil --- */}
-      <form onSubmit={handleInfoSubmit} className="bg-gray-800 p-8 rounded-lg shadow-lg mb-8">
-        <h2 className="text-2xl font-bold mb-4">Edit Info</h2>
-        <div className="mb-4">
-          <label className="block mb-2">Nama Tampilan</label>
-          <input
-            type="text"
-            name="displayName"
-            value={infoData.displayName}
-            onChange={handleInfoChange}
-            className="w-full p-2 rounded bg-gray-700 text-white"
-          />
-        </div>
-        <div className="mb-6">
-          <label className="block mb-2">Bio Singkat</label>
-          <textarea
-            name="bio"
-            rows="3"
-            value={infoData.bio}
-            onChange={handleInfoChange}
-            className="w-full p-2 rounded bg-gray-700 text-white"
-          />
-        </div>
-        <button type="submit" className="w-full bg-blue-600 p-3 rounded font-bold hover:bg-blue-500">
-          Simpan Info Profil
-        </button>
-        {message && <p className="mt-4 text-center">{message}</p>}
-      </form>
+        <div style={{display:'flex', gap:20}}>
+          <div style={{flex:'1 1 300px'}}>
+            <div style={{background:'#fff', padding:16, borderRadius:8}}>
+              <img src={user.profilePictureUrl || 'https://via.placeholder.com/160'} alt="profil" style={{width:160, height:160, borderRadius:8, objectFit:'cover'}} />
+              <h3 style={{marginTop:12}}>{user.displayName || user.email}</h3>
+              <p className="muted">{user.bio}</p>
+            </div>
 
-      {/* --- Form 2: Upload Foto Profil --- */}
-      <form onSubmit={handleUploadSubmit} className="bg-gray-800 p-8 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-4">Ubah Foto Profil</h2>
-        <div className="mb-4">
-          <label className="block mb-2">Pilih Gambar (JPG/PNG)</label>
-          <input
-            type="file"
-            name="file"
-            accept="image/png, image/jpeg"
-            onChange={handleFileChange}
-            className="w-full p-2 rounded bg-gray-700 text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-green-600 file:text-white hover:file:bg-green-500"
-          />
+            <div style={{marginTop:20, background:'#fff', padding:12, borderRadius:8}}>
+              <h3 style={{marginTop:0}}>Resep Saya</h3>
+              {recipes.length === 0 ? (
+                <div>
+                  <p className="muted">Belum ada resep.</p>
+                  <Link to="/create-recipe" className="btn btn-primary" style={{display:'inline-block', marginTop:10}}>Buat Resep</Link>
+                </div>
+              ) : (
+                <ul style={{paddingLeft:16}}>
+                  {recipes.map(r => (
+                    <li key={r._id} style={{marginBottom:8}}>
+                      <Link to={`/recipe/${r._id}`}>{r.title}</Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          <div style={{flex:'2 1 600px'}}>
+            <form onSubmit={handleInfoSubmit} style={{background:'#fff', padding:16, borderRadius:8, marginBottom:16}}>
+              <h2>Edit Info</h2>
+              <div style={{marginBottom:8}}>
+                <label>Nama Tampilan</label><br />
+                <input name="displayName" value={infoData.displayName} onChange={handleInfoChange} style={{width:'100%', padding:8}} />
+              </div>
+              <div style={{marginBottom:8}}>
+                <label>Bio Singkat</label><br />
+                <textarea name="bio" rows={3} value={infoData.bio} onChange={handleInfoChange} style={{width:'100%', padding:8}} />
+              </div>
+              <button className="btn btn-primary" type="submit">Simpan Info Profil</button>
+              {message && <p className="muted">{message}</p>}
+            </form>
+
+            <form onSubmit={handleUploadSubmit} style={{background:'#fff', padding:16, borderRadius:8, marginBottom:16}}>
+              <h2>Ubah Foto Profil</h2>
+              <div style={{marginBottom:8}}>
+                <input type="file" name="file" accept="image/png,image/jpeg" onChange={handleFileChange} />
+              </div>
+              <button className="btn" type="submit" disabled={!selectedFile}>Upload Gambar</button>
+              {uploadMessage && <p className="muted">{uploadMessage}</p>}
+            </form>
+
+            <form onSubmit={handlePasswordSubmit} style={{background:'#fff', padding:16, borderRadius:8}}>
+              <h2>Ganti Password</h2>
+              <div style={{marginBottom:8}}>
+                <label>Password Lama</label><br />
+                <input name="oldPassword" type="password" value={passwordForm.oldPassword} onChange={handlePasswordChange} style={{width:'100%', padding:8}} />
+              </div>
+              <div style={{marginBottom:8}}>
+                <label>Password Baru</label><br />
+                <input name="newPassword" type="password" value={passwordForm.newPassword} onChange={handlePasswordChange} style={{width:'100%', padding:8}} />
+              </div>
+              <button className="btn btn-primary" type="submit">Ganti Password</button>
+              {passwordMessage && <p className="muted">{passwordMessage}</p>}
+            </form>
+          </div>
         </div>
-        <button type="submit" className="w-full bg-green-600 p-3 rounded font-bold hover:bg-green-500" disabled={!selectedFile}>
-          Upload Gambar
-        </button>
-        {uploadMessage && <p className="mt-4 text-center">{uploadMessage}</p>}
-      </form>
+      </div>
     </div>
   );
 }

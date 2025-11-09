@@ -1,3 +1,60 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Basic CSS replacement for Tailwind utilities used in this project.
+	 This file provides lightweight styles so the app works without Tailwind.
+*/
+
+/* Reset / Base */
+* { box-sizing: border-box; }
+html,body,#root { height: 100%; }
+body {
+	margin: 0;
+	font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+	background: #f3f4f6;
+	color: #111827;
+}
+
+/* App layout */
+.app-root { min-height: 100vh; display: flex; flex-direction: column; }
+.layout { display: flex; flex: 1; }
+
+/* Navbar */
+.navbar { background: #ffffff; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 50; height: 64px; display: flex; align-items: center; }
+.nav-inner { width: 100%; max-width: 1120px; margin: 0 auto; position: relative; padding: 0 16px; }
+.logo { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #111827; font-weight: 600; }
+.logo .emoji { font-size: 22px; }
+.navbar-right { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); display: flex; gap: 8px; align-items: center; }
+.btn { display: inline-block; padding: 8px 12px; border-radius: 6px; text-decoration: none; cursor: pointer; }
+.btn-primary { background: #f97316; color: white; border: none; font-weight: 600; }
+.btn-ghost { background: transparent; color: #374151; border: none; }
+.profile-img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; }
+
+/* Sidebar */
+.sidebar { width: 220px; background: #ffffff; border-right: 1px solid #e5e7eb; height: calc(100vh - 64px); position: sticky; top: 64px; padding: 20px; overflow-y: auto; }
+.sidebar nav ul { list-style: none; padding: 0; margin: 0; }
+.sidebar nav li { margin-bottom: 12px; }
+.sidebar a { text-decoration: none; color: #374151; display: inline-flex; align-items: center; gap: 10px; padding: 8px; border-radius: 6px; }
+.sidebar a:hover { color: #f97316; }
+.muted { color: #6b7280; font-size: 14px; }
+
+/* Main content */
+.main-content { flex: 1; padding: 32px; }
+.container { max-width: 980px; margin: 0 auto; }
+.page-title { font-size: 36px; font-weight: 700; margin: 0 0 16px 0; }
+
+/* Search */
+.search-form { display: flex; max-width: 820px; margin-bottom: 24px; }
+.search-input { flex: 1; padding: 10px 12px; border: 2px solid #d1d5db; border-right: none; border-radius: 6px 0 0 6px; }
+.search-btn { padding: 10px 14px; border: 2px solid #d1d5db; background: #f3f4f6; border-radius: 0 6px 6px 0; cursor: pointer; }
+
+/* Recipes grid */
+.recipes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+.card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; text-decoration: none; color: inherit; display: block; }
+.card .thumb { height: 160px; background: #e5e7eb; display:flex; align-items:center; justify-content:center; color:#9ca3af; }
+.card .body { padding: 12px; }
+.card .title { font-weight: 700; margin: 0 0 8px 0; }
+.card .meta { color: #6b7280; font-size: 13px; }
+
+/* Responsive small screens */
+@media (max-width: 700px) {
+	.sidebar { display: none; }
+	.nav-inner { padding: 0 12px; }
+}

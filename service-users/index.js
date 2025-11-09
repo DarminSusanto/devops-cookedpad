@@ -77,17 +77,24 @@ app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // debug logging: show that a login attempt arrived
+    console.log(`[LOGIN] attempt from ${req.ip} email=${email}`);
+
     // 1. Cek user
     const user = await User.findOne({ email });
     if (!user) {
+      console.log(`[LOGIN] failed - user not found: ${email}`);
       return res.status(400).json({ message: 'Email atau password salah' });
     }
 
     // 2. Cek password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log(`[LOGIN] failed - wrong password for: ${email}`);
       return res.status(400).json({ message: 'Email atau password salah' });
     }
+
+    console.log(`[LOGIN] success for ${email}`);
 
     // 3. Buat Token (Payload)
     const payload = {
@@ -166,12 +173,19 @@ app.get('/user/:id', async (req, res) => {
  */
 app.put('/me', auth, async (req, res) => {
   try {
-    const { displayName, bio } = req.body;
+    // Ambil field yang mungkin dikirim
+    const { displayName, bio, profilePictureUrl } = req.body;
+
+    // Hanya set field yang diberikan agar tidak menimpa dengan undefined
+    const update = {};
+    if (displayName !== undefined) update.displayName = displayName;
+    if (bio !== undefined) update.bio = bio;
+    if (profilePictureUrl !== undefined) update.profilePictureUrl = profilePictureUrl;
 
     const updatedUser = await User.findByIdAndUpdate(
-      req.user.id, // Ambil ID dari token
-      { $set: { displayName, bio } }, // Data baru
-      { new: true } // Kembalikan dokumen yang sudah baru
+      req.user.id,
+      { $set: update },
+      { new: true }
     ).select('-password');
 
     res.json(updatedUser);

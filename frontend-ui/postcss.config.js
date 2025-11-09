@@ -2,7 +2,9 @@
 
 export default {
   plugins: {
-    '@tailwindcss/postcss': {}, // Ganti 'tailwindcss' menjadi '@tailwindcss/postcss'
+    // Untuk kompatibilitas dengan environment build (Tailwind v4+),
+    // gunakan plugin resmi PostCSS package '@tailwindcss/postcss'.
+    '@tailwindcss/postcss': {},
     autoprefixer: {},
   },
 }

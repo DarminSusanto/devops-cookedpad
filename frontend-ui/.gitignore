@@ -1,3 +1,5 @@
+# /frontend-ui/.dockerignore
+
 # Logs
 logs
 *.log
