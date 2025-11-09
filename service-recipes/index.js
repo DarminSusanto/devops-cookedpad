@@ -3,8 +3,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const Recipe = require('./models/Recipe'); // Import model Recipe
-const auth = require('./auth'); // Import "Penjaga Gerbang" (Middleware)
+const Recipe = require('./models/Recipe'); 
+const auth = require('./auth');
 
 const app = express();
 const PORT = 3002;
