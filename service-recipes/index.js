@@ -9,7 +9,7 @@ const auth = require('./auth'); // Import "Penjaga Gerbang" (Middleware)
 const app = express();
 const PORT = 3002;
 app.use(express.json());
-app.use(cors()); // Terapkan CORS untuk semua rute
+app.use(cors()); 
 
 // --- Koneksi Database ---
 const DB_URI = 'mongodb://mongo-db:27017/db_resep';
